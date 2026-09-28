@@ -1,0 +1,70 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      server:
+        webflux:
+          globalcors:
+            cors-configurations:
+              '[/**]':
+                allowedOrigins: ${FRONTEND_ORIGIN:http://localhost:3000}
+                allowedMethods: [GET, POST, PUT, DELETE, OPTIONS]
+                allowedHeaders: "*"
+                exposedHeaders: [X-Auth-Error]
+                allowCredentials: true
+          routes:
+            - id: user-service-auth
+              uri: ${USER_SERVICE_URL:http://localhost:8081}
+              predicates:
+                - Path=/api/auth/**
+              filters:
+                - StripPrefix=1
+
+            - id: user-service
+              uri: ${USER_SERVICE_URL:http://localhost:8081}
+              predicates:
+                - Path=/api/users/**
+              filters:
+                - StripPrefix=1
+
+            - id: post-service
+              uri: ${POST_SERVICE_URL:http://localhost:8082}
+              predicates:
+                - Path=/api/posts/**
+              filters:
+                - StripPrefix=1
+
+            - id: post-service-stories
+              uri: ${POST_SERVICE_URL:http://localhost:8082}
+              predicates:
+                - Path=/api/stories/**
+              filters:
+                - StripPrefix=1
+
+            - id: notification-service
+              uri: ${NOTIFICATION_SERVICE_URL:http://localhost:8083}
+              predicates:
+                - Path=/api/notifications/**
+              filters:
+                - StripPrefix=1
+
+            - id: user-service-recommendations
+              uri: ${USER_SERVICE_URL:http://localhost:8081}
+              predicates:
+                - Path=/api/recommendations/**
+              filters:
+                - StripPrefix=1
+
+loopin:
+  jwt:
+    secret: ${LOOPIN_JWT_SECRET:qasvnnklkxsajakkqwedbrfytungdnmm}
+
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
+    reactor.netty.http.server: DEBUG
+    com.loopin.gateway: DEBUG

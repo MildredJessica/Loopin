@@ -1,0 +1,32 @@
+server:
+  port: 8082
+spring:
+  application:
+    name: post-service
+  datasource:
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT:5432}/${DB_NAME:postgres}?sslmode=require&currentSchema=${DB_SCHEMA:public}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}   # set this as an env var, never commit it
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        default_schema: ${DB_SCHEMA:posts}
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    schemas: ${DB_SCHEMA:posts}
+    default-schema: ${DB_SCHEMA:posts}
+
+loopin:
+  jwt:
+    secret: ${LOOPIN_JWT_SECRET:qasvnnklkxsajakkqwedbrfytungdnmm}
+  user-service:
+    base-url: ${USER_SERVICE_URL:http://localhost:8081}
+  notification-service:
+    base-url: ${NOTIFICATION_SERVICE_URL:http://localhost:8083}
+  internal-api-key: ${LOOPIN_INTERNAL_API_KEY:${LOOPIN_JWT_SECRET:qasvnnklkxsajakkqwedbrfytungdnmm}}

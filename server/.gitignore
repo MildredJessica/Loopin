@@ -1,0 +1,17 @@
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.DS_Store
+.vscode
+package-lock.json
+.idea
+target/
+bin/
+.classpath
+.project
+.settings/
+*.class
+*.jar
+.mvn
