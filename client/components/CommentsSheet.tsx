@@ -61,16 +61,17 @@ export function CommentsSheet({
     setBusy(true);
 
     try {
-      const c = await api<Comment>(`/posts/${post.id}/comments`, {
+      await api<Comment>(`/posts/${post.id}/comments`, {
         method: "POST",
         json: {
           text: text.trim(),
         },
       });
 
-      setComments((prev) => [c, ...(prev ?? [])]);
+      // setComments((prev) => [c, ...(prev ?? [])]);
       setText("");
 
+      await load(0, false);
       onChanged({
         ...post,
         commentCount: post.commentCount + 1,

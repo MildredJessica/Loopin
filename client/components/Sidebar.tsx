@@ -54,28 +54,28 @@ export function Sidebar() {
   useEffect(() => {
     let cancelled = false;
 
-    async function prefetchNotifications() {
-      try {
-        const cached = sessionStorage.getItem("loopin_notifications");
+    // async function prefetchNotifications() {
+    //   try {
+    //     const cached = sessionStorage.getItem("loopin_notifications");
 
-        if (cached) return;
+    //     if (cached) return;
 
-        const response = await api<Page<NotificationItem>>(
-          "/notifications?page=0&size=30",
-        );
+    //     const response = await api<Page<NotificationItem>>(
+    //       "/notifications?page=0&size=30",
+    //     );
 
-        if (!cancelled) {
-          sessionStorage.setItem(
-            "loopin_notifications",
-            JSON.stringify(response.content),
-          );
-        }
-      } catch {
-        // Prefetch failure should never affect the sidebar.
-      }
-    }
+    //     if (!cancelled) {
+    //       sessionStorage.setItem(
+    //         "loopin_notifications",
+    //         JSON.stringify(response.content),
+    //       );
+    //     }
+    //   } catch {
+    //     // Prefetch failure should never affect the sidebar.
+    //   }
+    // }
 
-    void prefetchNotifications();
+    // void prefetchNotifications();
 
     return () => {
       cancelled = true;

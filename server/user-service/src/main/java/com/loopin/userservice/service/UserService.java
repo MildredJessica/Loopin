@@ -11,6 +11,7 @@ import com.loopin.userservice.model.User;
 import com.loopin.userservice.repository.FollowRepository;
 import com.loopin.userservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.Nullable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -18,6 +19,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -120,5 +122,14 @@ public class UserService {
     public User findByUsernameOrThrow(String username){
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found: " + username));
+    }
+
+    public Map<UUID, String> getAvatarGradients(List<UUID> userIds) {
+        return userRepository.findAllById(userIds)
+                .stream()
+                .collect(Collectors.toMap(
+                        User::getId,
+                        User::getAvatarGradient
+                ));
     }
 }

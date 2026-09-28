@@ -28,14 +28,30 @@ export default function NotificationsPage() {
   const [error, setError] = useState<string | null>(null);
   const [marking, setMarking] = useState(false);
 
-  const load = useCallback(async (background = false) => {
+ const load = useCallback(async (background = false) => {
     try {
       const d = await api<Page<NotificationItem>>(
-          "/notifications?page=0&size=30"
-        );
+        "/notifications?page=0&size=30"
+      );
 
-        setItems(d.content);
-        setError(null);
+      setItems((previous) => {
+        if (previous) {
+          const previousIds = new Set(previous.map((item) => item.id));
+          const hasNewNotification = d.content.some(
+            (item) => !previousIds.has(item.id)
+          );
+
+          if (hasNewNotification) {
+            window.dispatchEvent(
+              new Event("loopin:notification-change")
+            );
+          }
+        }
+
+        return d.content;
+      });
+
+      setError(null);
     } catch (e) {
       if (!background) {
         setError(
@@ -43,7 +59,7 @@ export default function NotificationsPage() {
             ? e.message
             : "Couldn't load notifications."
         );
-     }
+      }
     }
   }, []);
 
@@ -54,7 +70,7 @@ export default function NotificationsPage() {
       if (document.visibilityState === "visible") {
         void load();
       }
-    }, 1000);
+    }, 3000);
 
     const onVisible = () => {
       if (document.visibilityState === "visible") {
@@ -74,7 +90,7 @@ export default function NotificationsPage() {
     setMarking(true);
     try {
       await api("/notifications/read-all", { method: "PUT" });
-      window.dispatchEvent(new Event("loopin:notifications-change"));
+      window.dispatchEvent(new Event("loopin:notification-change"));
       await load();
     } finally {
       setMarking(false);

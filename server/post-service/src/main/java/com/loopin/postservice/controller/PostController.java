@@ -41,10 +41,11 @@ public class PostController {
     public ResponseEntity<PostResponse> create(
             @RequestHeader("X-User-Id") UUID authorId,
             @RequestHeader("X-Username") String authorUsername,
+            @RequestHeader("X-Avatar-Gradient") String avatarGradient,
             @Valid @RequestBody CreatePostRequest req
     ) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(postService.createPost(authorId, authorUsername, req));
+                .body(postService.createPost(authorId, authorUsername, avatarGradient, req));
     }
 
     @PostMapping("/{postId}/like")
@@ -70,10 +71,11 @@ public class PostController {
             @PathVariable UUID postId,
             @RequestHeader("X-User-Id") UUID authorId,
             @RequestHeader("X-Username") String authorUsername,
+            @RequestHeader("X-Avatar-Gradient") String avatarGradient,
             @Valid @RequestBody CreateCommentRequest req
     ) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(postService.addComment(postId, authorId, authorUsername, req));
+                .body(postService.addComment(postId, authorId, authorUsername, avatarGradient, req));
     }
 
     @GetMapping("/{postId}/comments")

@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpStatus;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -58,6 +59,13 @@ public class UserController {
     ) {
         userService.unfollow(followerId, username);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/avatar-gradients")
+    public ResponseEntity<Map<UUID, String>> getAvatarGradients(
+            @RequestParam List<UUID> ids
+    ) {
+        return ResponseEntity.ok(userService.getAvatarGradients(ids));
     }
 
     @GetMapping("/{userId}/avatar-gradient")

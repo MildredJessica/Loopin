@@ -2,6 +2,7 @@ package com.loopin.postservice.client;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
@@ -17,6 +18,7 @@ import org.springframework.web.client.RestClient;
 public class NotificationClient {
     private final RestClient notificationServiceClient;
 
+    @Async("notificationExecutor")
     public void send(NotificationEvent event) {
         try {
             notificationServiceClient.post()

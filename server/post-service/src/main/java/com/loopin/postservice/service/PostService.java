@@ -21,6 +21,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -46,7 +47,7 @@ public class PostService {
                 postRepository.findAllByOrderByCreatedAtDesc(pageable);
 
         if (posts.isEmpty()) {
-            return posts.map(post -> toResponse(post, false));
+            return posts.map(post -> toResponse(post, false, post.getAuthorGradient()));
         }
 
         Set<UUID> likedPostIds = viewerId == null
@@ -59,10 +60,22 @@ public class PostService {
                         .toList()
         );
 
+        Set<UUID> authorIds = posts.getContent()
+                .stream()
+                .map(Post::getAuthorId)
+                .collect(java.util.stream.Collectors.toSet());
+
+        Map<UUID, String> currentGradients =
+                userClient.getAvatarGradients(authorIds);
+
         return posts.map(post ->
                 toResponse(
                         post,
-                        likedPostIds.contains(post.getId())
+                        likedPostIds.contains(post.getId()),
+                        currentGradients.getOrDefault(
+                                post.getAuthorId(),
+                                post.getAuthorGradient()
+                        )
                 )
         );
     }
@@ -74,19 +87,19 @@ public class PostService {
      * One User Service lookup is currently retained because
      * the post must use the user's current avatar gradient.
      */
-    public PostResponse createPost(UUID authorId, String authorUsername, CreatePostRequest request){
+    public PostResponse createPost(UUID authorId, String authorUsername, String avatarGradient, CreatePostRequest request){
         // Get the user's CURRENT avatar gradient from User Service.
-        String currentAvatarGradient = userClient.getAvatarGradient(authorId);
+//        String currentAvatarGradient = userClient.getAvatarGradient(authorId);
         Post post = Post.builder()
                 .authorId(authorId)
                 .authorUsername(authorUsername)
-                .authorGradient(currentAvatarGradient)
+                .authorGradient(avatarGradient)
                 .body(request.body())
                 .tag(request.tag())
                 .mediaLabel(request.mediaLabel())
                 .mediaGradient(request.mediaGradient())
                 .build();
-        return toResponse(postRepository.save(post),false);
+        return toResponse(postRepository.save(post),false, avatarGradient);
     }
 
     /**
@@ -96,7 +109,7 @@ public class PostService {
     public PostResponse like(UUID postId, UUID userID, String actorUsername, String actorGradient){
         Post post = findPostOrThrow(postId);
         if (postLikeRepository.existsByPostIdAndUserId(postId, userID)) {
-            return toResponse(post, true);
+            return toResponse(post, true, actorGradient);
         }
         postLikeRepository.save(
                 PostLike.builder()
@@ -112,7 +125,7 @@ public class PostService {
                     "LIKE", actorUsername + " Liked your post"
             ));
         }
-        return  toResponse(post, true);
+        return  toResponse(post, true, post.getAuthorGradient());
     }
     /**
      * UNLIKE
@@ -124,7 +137,7 @@ public class PostService {
             postLikeRepository.delete(like);
             post.setLikeCount(Math.max(0, post.getLikeCount() - 1));
         });
-        return toResponse(post, false);
+        return toResponse(post, false, post.getAuthorGradient());
     }
 
     /**
@@ -132,7 +145,7 @@ public class PostService {
      */
     @Transactional
     public CommentResponse addComment(UUID postID, UUID authorID, String authorUsername,
-                                      CreateCommentRequest req) {
+                                      String avatarGradient, CreateCommentRequest req) {
         Post post = findPostOrThrow(postID);
 
         /*
@@ -140,12 +153,12 @@ public class PostService {
          * the current avatar gradient.
          */
         // Get the user's CURRENT avatar gradient from User Service.
-        String currentAvatarGradient = userClient.getAvatarGradient(authorID);
+        // String currentAvatarGradient = userClient.getAvatarGradient(authorID);
         Comment comment = Comment.builder()
                 .postId(postID)
                 .authorId(authorID)
                 .authorUsername(authorUsername)
-                .authorGradient(currentAvatarGradient)
+                .authorGradient(avatarGradient)
                 .text(req.text())
                 .build();
         commentRepository.save(comment);
@@ -154,12 +167,12 @@ public class PostService {
 
         if (!post.getAuthorId().equals(authorID)) {
             notificationClient.send(new NotificationEvent(
-                    post.getAuthorUsername(), post.getAuthorId(), authorUsername, currentAvatarGradient,
+                    post.getAuthorUsername(), post.getAuthorId(), authorUsername, avatarGradient,
                     "COMMENT", authorUsername + " commented: \"" + trim(req.text()) + "\""
             ));
         }
 
-        return new CommentResponse(comment.getId(), comment.getAuthorUsername(), currentAvatarGradient,
+        return new CommentResponse(comment.getId(), comment.getAuthorUsername(), comment.getAuthorGradient(),
                 comment.getText(), comment.getCreatedAt());
     }
 
@@ -170,13 +183,56 @@ public class PostService {
      *
      * No User Service call for every comment.
      */
-    public Page<CommentResponse> getComments(UUID postId, Pageable pageable) {
-        return commentRepository.findByPostIdOrderByCreatedAtAsc(postId, pageable)
-                .map(c ->{
-                        return new CommentResponse(c.getId(), c.getAuthorUsername(), c.getAuthorGradient(), c.getText(), c.getCreatedAt());
-                });
-    }
+//    public Page<CommentResponse> getComments(UUID postId, Pageable pageable) {
+//        return commentRepository.findByPostIdOrderByCreatedAtAsc(postId, pageable)
+//                .map(c ->{
+//                        return new CommentResponse(c.getId(), c.getAuthorUsername(), c.getAuthorGradient(), c.getText(), c.getCreatedAt());
+//                });
+//    }
 
+    public Page<CommentResponse> getComments(
+            UUID postId,
+            Pageable pageable
+    ) {
+        Page<Comment> comments =
+                commentRepository.findByPostIdOrderByCreatedAtAsc(
+                        postId,
+                        pageable
+                );
+
+        if (comments.isEmpty()) {
+            return comments.map(c ->
+                    new CommentResponse(
+                            c.getId(),
+                            c.getAuthorUsername(),
+                            c.getAuthorGradient(),
+                            c.getText(),
+                            c.getCreatedAt()
+                    )
+            );
+        }
+
+        Set<UUID> authorIds = comments.getContent()
+                .stream()
+                .map(Comment::getAuthorId)
+                .collect(java.util.stream.Collectors.toSet());
+
+        Map<UUID, String> currentGradients =
+                userClient.getAvatarGradients(authorIds);
+
+        return comments.map(comment ->
+                new CommentResponse(
+                        comment.getId(),
+                        comment.getAuthorUsername(),
+                        currentGradients.getOrDefault(
+                                comment.getAuthorId(),
+                                comment.getAuthorGradient()
+                        ),
+                        comment.getText(),
+                        comment.getCreatedAt()
+                )
+        );
+    }
 //    private PostResponse toResponse(Post post, UUID viewerId) {
 //        boolean liked = viewerId != null && postLikeRepository.existsByPostIdAndUserId(post.getId(), viewerId);
 //        String currentAvatarGradient = userClient.getAvatarGradient(post.getAuthorId());
@@ -186,14 +242,11 @@ public class PostService {
 //                post.getCommentCount(), post.getCreatedAt()
 //        );
 //    }
-    private PostResponse toResponse(
-            Post post,
-            boolean liked
-    ) {
+    private PostResponse toResponse(Post post, boolean liked, String avatarGradient) {
         return new PostResponse(
                 post.getId(),
                 post.getAuthorUsername(),
-                post.getAuthorGradient(),
+                avatarGradient,
                 post.getBody(),
                 post.getTag(),
                 post.getMediaLabel(),
