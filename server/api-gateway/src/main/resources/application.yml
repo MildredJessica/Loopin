@@ -59,6 +59,19 @@ spring:
               filters:
                 - StripPrefix=1
 
+            - id: message-service
+              uri: http://localhost:8084
+              predicates:
+                - Path=/api/messages/**
+              filters:
+                - StripPrefix=1
+
+            - id: message-service-websocket
+              uri: ws://localhost:8084
+              predicates:
+                - Path=/ws
+
+
 loopin:
   jwt:
     secret: ${LOOPIN_JWT_SECRET:qasvnnklkxsajakkqwedbrfytungdnmm}

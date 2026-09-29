@@ -31,7 +31,7 @@ import java.util.List;
  */
 @Component
 public class JwtAuthGatewayFilter implements GlobalFilter, Ordered {
-    private static final List<String> PUBLIC_PREFIXES = List.of("/api/auth/");
+    private static final List<String> PUBLIC_PREFIXES = List.of("/api/auth/", "/ws");
 
     private final SecretKey key;
 

@@ -3,6 +3,8 @@
 import { Client, IMessage, StompSubscription } from "@stomp/stompjs";
 import { getToken } from "./api";
 
+
+
 export type ChatEvent = {
   event: "MESSAGE_CREATED" | "TYPING_STARTED" | "TYPING_STOPPED" | "MESSAGES_READ" | "REQUEST_ACCEPTED";
   conversationId: string;

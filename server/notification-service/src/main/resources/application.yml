@@ -29,5 +29,5 @@ loopin:
   user-service:
     base-url: ${USER_SERVICE_URL:http://localhost:8081}
   jwt:
-    secret: ${LOOPIN_JWT_SECRET:qasvnnklkxsajakkqwedbrfytungdnmm}
-  internal-api-key: ${LOOPIN_INTERNAL_API_KEY:${LOOPIN_JWT_SECRET:qasvnnklkxsajakkqwedbrfytungdnmm}}
+    secret: ${LOOPIN_JWT_SECRET}
+  internal-api-key: ${LOOPIN_INTERNAL_API_KEY:${LOOPIN_JWT_SECRET}}

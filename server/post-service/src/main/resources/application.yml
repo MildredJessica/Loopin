@@ -26,9 +26,9 @@ spring:
 
 loopin:
   jwt:
-    secret: ${LOOPIN_JWT_SECRET:qasvnnklkxsajakkqwedbrfytungdnmm}
+    secret: ${LOOPIN_JWT_SECRET}
   user-service:
     base-url: ${USER_SERVICE_URL:http://localhost:8081}
   notification-service:
     base-url: ${NOTIFICATION_SERVICE_URL:http://localhost:8083}
-  internal-api-key: ${LOOPIN_INTERNAL_API_KEY:${LOOPIN_JWT_SECRET:qasvnnklkxsajakkqwedbrfytungdnmm}}
+  internal-api-key: ${LOOPIN_INTERNAL_API_KEY:${LOOPIN_JWT_SECRET}}

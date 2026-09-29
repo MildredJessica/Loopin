@@ -26,6 +26,7 @@
         <module>user-service</module>
         <module>notification-service</module>
         <module>api-gateway</module>
+        <module>message-service</module>
     </modules>
     <scm>
 		<connection/>

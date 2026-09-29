@@ -125,14 +125,10 @@ export interface Message {
   createdAt: string;
 }
 
-export interface MessageRequest {
-  conversationId: string;
-  requesterId: string;
-  requesterUsername: string;
-  requesterName: string;
-  requesterAvatarGradient: string;
-  message: Message;
-  createdAt: string;
+export interface SendMessageRequest {
+  type: MessageType;
+  content: string | null;
+  clientMessageId?: string | null;
 }
 
 export interface ChatEvent {
