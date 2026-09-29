@@ -6,5 +6,6 @@ import java.util.UUID;
 
 public record TypingEvent(
         @NotNull UUID conversationId,
-        boolean typing
+        @NotNull UUID userId,
+        @NotNull boolean typing
 ) {}

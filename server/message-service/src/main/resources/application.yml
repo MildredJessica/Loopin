@@ -30,6 +30,8 @@ loopin:
   internal-api-key: ${LOOPIN_INTERNAL_API_KEY:${LOOPIN_JWT_SECRET}}
   user-service:
     base-url: ${USER_SERVICE_URL:http://localhost:8081}
+  websocket:
+    allowed-origin: ${FRONTEND_ORIGIN:http://localhost:3000}
 
 logging:
   level:

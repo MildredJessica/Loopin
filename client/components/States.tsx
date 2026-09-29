@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { RobotError } from "./RobotError";
 
 export function EmptyState({
   icon,
@@ -34,17 +35,5 @@ export function ErrorState({
   message: string;
   onRetry?: () => void;
 }) {
-  return (
-    <div className="card flex flex-col items-center gap-3 p-8 text-center">
-      <p className="text-sm text-ink-soft">{message}</p>
-      {onRetry && (
-        <button
-          onClick={onRetry}
-          className="btn-press rounded-full bg-violet px-4 py-2 text-sm font-semibold text-white"
-        >
-          Try again
-        </button>
-      )}
-    </div>
-  );
+  return <RobotError message={message} onRetry={onRetry} />;
 }

@@ -1,14 +1,16 @@
 package com.loopin.messageservice.controller;
 
 import com.loopin.messageservice.dto.*;
+import com.loopin.messageservice.model.ConversationStatus;
 import com.loopin.messageservice.service.MessageService;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
 import java.security.Principal;
+import java.time.Instant;
 import java.util.UUID;
 
 @Controller
@@ -19,11 +21,14 @@ public class ChatWebSocketController {
     private final SimpMessagingTemplate messagingTemplate;
 
     @MessageMapping("/chat.send")
-    public void send(@Valid ChatSendRequest request, Principal principal) {
-        UUID senderId = UUID.fromString(principal.getName());
+    public void send(
+            @Payload ChatSendRequest request,
+            Principal principal
+    ) {
+        UUID currentUserId = currentUserId(principal);
 
-        MessageResponse message = messageService.sendMessage(
-                senderId,
+        MessageResponse saved = messageService.sendMessage(
+                currentUserId,
                 request.conversationId(),
                 new SendMessageRequest(
                         request.type(),
@@ -32,96 +37,138 @@ public class ChatWebSocketController {
                 )
         );
 
-        UUID recipientId = messageService.getOtherMember(
-                request.conversationId(), senderId
-        );
-
         ChatEvent event = new ChatEvent(
-                "MESSAGE_CREATED",
-                request.conversationId(),
-                message,
-                senderId,
-                message.createdAt()
+                saved.id(),
+                saved.conversationId(),
+                saved.senderId(),
+                saved.type(),
+                saved.content(),
+                saved.clientMessageId(),
+                saved.createdAt()
         );
 
-        messagingTemplate.convertAndSendToUser(
-                recipientId.toString(),
+        UUID otherUserId = messageService.getOtherMember(
+                request.conversationId(),
+                currentUserId
+        );
+
+        sendToUser(
+                currentUserId,
                 "/queue/messages",
                 event
         );
 
-        // Echo the server-authoritative message back to the sender.
-        messagingTemplate.convertAndSendToUser(
-                senderId.toString(),
+        sendToUser(
+                otherUserId,
                 "/queue/messages",
                 event
         );
     }
 
     @MessageMapping("/chat.typing")
-    public void typing(@Valid TypingEvent request, Principal principal) {
-        UUID senderId = UUID.fromString(principal.getName());
+    public void typing(
+            @Payload TypingRequest request,
+            Principal principal
+    ) {
+        UUID currentUserId = currentUserId(principal);
 
-        UUID recipientId = messageService.getOtherMember(
-                request.conversationId(), senderId
+        UUID otherUserId = messageService.getOtherMember(
+                request.conversationId(),
+                currentUserId
         );
 
-        messagingTemplate.convertAndSendToUser(
-                recipientId.toString(),
+        TypingEvent event = new TypingEvent(
+                request.conversationId(),
+                currentUserId,
+                request.typing()
+        );
+
+        sendToUser(
+                otherUserId,
                 "/queue/typing",
-                new ChatEvent(
-                        request.typing() ? "TYPING_STARTED" : "TYPING_STOPPED",
-                        request.conversationId(),
-                        null,
-                        senderId,
-                        java.time.Instant.now()
-                )
+                event
         );
     }
 
     @MessageMapping("/chat.read")
-    public void read(@Valid ReadEvent request, Principal principal) {
-        UUID userId = UUID.fromString(principal.getName());
+    public void read(
+            @Payload ReadRequest request,
+            Principal principal
+    ) {
+        UUID currentUserId = currentUserId(principal);
 
-        messageService.markRead(userId, request.conversationId());
-
-        UUID otherId = messageService.getOtherMember(
-                request.conversationId(), userId
+        messageService.markRead(
+                currentUserId,
+                request.conversationId()
         );
 
-        messagingTemplate.convertAndSendToUser(
-                otherId.toString(),
+        UUID otherUserId = messageService.getOtherMember(
+                request.conversationId(),
+                currentUserId
+        );
+
+        ReadEvent event = new ReadEvent(
+                request.conversationId(),
+                currentUserId,
+                Instant.now()
+        );
+
+        sendToUser(
+                otherUserId,
                 "/queue/read",
-                new ChatEvent(
-                        "MESSAGES_READ",
-                        request.conversationId(),
-                        null,
-                        userId,
-                        java.time.Instant.now()
-                )
+                event
         );
     }
 
     @MessageMapping("/chat.accept")
-    public void accept(ReadEvent request, Principal principal) {
-        UUID userId = UUID.fromString(principal.getName());
+    public void accept(
+            @Payload ConversationActionRequest request,
+            Principal principal
+    ) {
+        UUID currentUserId = currentUserId(principal);
 
-        messageService.acceptRequest(userId, request.conversationId());
-
-        UUID otherId = messageService.getOtherMember(
-                request.conversationId(), userId
+        UUID requesterId = messageService.getOtherMember(
+                request.conversationId(),
+                currentUserId
         );
 
-        messagingTemplate.convertAndSendToUser(
-                otherId.toString(),
+        messageService.acceptRequest(
+                currentUserId,
+                request.conversationId()
+        );
+
+        RequestEvent event = new RequestEvent(
+                request.conversationId(),
+                currentUserId,
+                ConversationStatus.ACCEPTED
+        );
+
+        sendToUser(
+                requesterId,
                 "/queue/requests",
-                new ChatEvent(
-                        "REQUEST_ACCEPTED",
-                        request.conversationId(),
-                        null,
-                        userId,
-                        java.time.Instant.now()
-                )
+                event
+        );
+    }
+
+    private UUID currentUserId(Principal principal) {
+        if (principal == null || principal.getName() == null) {
+            throw new IllegalStateException(
+                    "Authenticated WebSocket principal is missing"
+            );
+        }
+
+        return UUID.fromString(principal.getName());
+    }
+
+    private void sendToUser(
+            UUID userId,
+            String destination,
+            Object payload
+    ) {
+        messagingTemplate.convertAndSendToUser(
+                userId.toString(),
+                destination,
+                payload
         );
     }
 }

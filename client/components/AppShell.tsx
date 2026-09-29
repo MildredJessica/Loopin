@@ -16,17 +16,12 @@ import { useAuth } from "../lib/auth";
 import { useUnreadCount } from "../lib/useUnreadCount";
 import { cn } from "../lib/utils";
 import { Logo } from "./Logo";
+import { LoopinLoader } from "./LoopinLoader";
 import { Onboarding } from "./Onboarding";
 import { Sidebar } from "./Sidebar";
-import { Skeleton } from "./Skeletons";
 
 function Splash() {
-  return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-base">
-      <Logo size={48} />
-      <Skeleton className="h-3 w-40" />
-    </div>
-  );
+  return <LoopinLoader fullScreen />;
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
