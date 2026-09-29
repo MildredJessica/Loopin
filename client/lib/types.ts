@@ -87,3 +87,67 @@ export interface Page<T> {
   totalPages: number;
   number: number;
 }
+
+export type ConversationStatus =
+  | "REQUEST"
+  | "ACCEPTED"
+  | "REJECTED"
+  | "BLOCKED";
+
+export type MessageType =
+  | "TEXT"
+  | "IMAGE"
+  | "VIDEO"
+  | "FILE"
+  | "VOICE";
+
+export interface Conversation {
+  id: string;
+  otherUserId: string;
+  username: string;
+  name: string;
+  avatarGradient: string;
+  status: ConversationStatus;
+  requestedBy: string;
+  lastMessage?: string | null;
+  lastMessageType?:  string | null;
+  lastMessageAt?: string | null;
+  unreadCount: number;
+}
+
+export interface Message {
+  id: string;
+  conversationId: string;
+  senderId: string;
+  type: MessageType;
+  content: string | null;
+  clientMessageId: string | null;
+  createdAt: string;
+}
+
+export interface MessageRequest {
+  conversationId: string;
+  requesterId: string;
+  requesterUsername: string;
+  requesterName: string;
+  requesterAvatarGradient: string;
+  message: Message;
+  createdAt: string;
+}
+
+export interface ChatEvent {
+  type: "MESSAGE";
+  message: Message;
+}
+
+export interface TypingEvent {
+  conversationId: string;
+  userId: string;
+  typing: boolean;
+}
+
+export interface ReadEvent {
+  conversationId: string;
+  userId: string;
+  readAt: string;
+}
